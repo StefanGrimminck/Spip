@@ -1,6 +1,6 @@
 # Spip - Robust Internet Sensor
 
-Spip is a minimalist internet sensor, built in Rust to leverage the asynchronous runtime of Tokio, and utilizing low-level networking principles from C via libc. It's tailored for integration within network infrastructure or deployment on an internet-facing device, such as a VPS. Its primary function is to log all incoming TCP traffic.
+Spip is a minimalist internet sensor, built in Rust to leverage the asynchronous runtime of Tokio, and utilizing low-level networking capability from C via libc. It's tailored for integration within network infrastructure or deployment on an internet-facing device, such as a VPS. Its primary function is to log all incoming TCP traffic.
 
 Spip can be used to identify abnormal network traffic patterns or attempts by internet scanners to locate specific devices. It generates a record of all inbound TCP network traffic, providing data in JSON format for threat detection and analysis.
 
