@@ -90,4 +90,3 @@ feel free to raise them in the GitHub repository.
 
 For any queries, suggestions, or feedback, please reach out to us at [spip@stefangrimminck.nl](mailto:spip@stefangrimminck.nl). We'll be delighted 
 to assist you.
-```
