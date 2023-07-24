@@ -5,6 +5,11 @@ use std::os::unix::io::AsRawFd;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use libc::{getsockopt, socklen_t, sockaddr_in, SOL_IP, SO_ORIGINAL_DST};
+use native_tls;
+use openssl::pkcs12::Pkcs12;
+use openssl::pkey::PKey;
+use openssl::rsa::Rsa;
+use openssl::x509::X509;
 use serde_derive::{Deserialize, Serialize};
 use serde_json;
 use tokio::io::{AsyncReadExt, BufReader};
@@ -17,6 +22,8 @@ use uuid::Uuid;
 struct Config {
     ip: String,
     port: u16,
+    key_path: String,
+    cert_path: String,
 }
 
 #[derive(Debug)]
@@ -25,9 +32,16 @@ struct OriginalDst {
     port: u16,
 }
 
+#[derive(Clone)]
+struct ServerConfig {
+    ip: String,
+    port: u16,
+    identity: native_tls::Identity,
+}
+
 #[derive(Serialize)]
 struct ConnectionData {
-    timestamp: u64,
+    timestamp: String,
     payload: String,
     payload_hex: String,
     source_ip: String,
@@ -64,7 +78,7 @@ unsafe fn get_original_dst(socket: &TcpStream) -> Result<OriginalDst, Error> {
     }
 }
 
-async fn handle_client(mut stream: TcpStream) {
+async fn handle_client(mut stream: TcpStream, server_config: ServerConfig) {
     let session_id = Uuid::new_v4().to_string();
     let mut buf = [0; 4096];
 
@@ -82,10 +96,7 @@ async fn handle_client(mut stream: TcpStream) {
                 if let Ok(original_dst) = unsafe { get_original_dst(&stream) } {
                     if let Ok(peer_addr) = stream.peer_addr() {
                         let connection_data = ConnectionData {
-                            timestamp: SystemTime::now()
-                                .duration_since(UNIX_EPOCH)
-                                .unwrap()
-                                .as_secs(),
+                            timestamp: Utc::now().to_string(),
                             payload,
                             payload_hex,
                             source_ip: peer_addr.ip().to_string(),
@@ -108,7 +119,6 @@ async fn handle_client(mut stream: TcpStream) {
     }
 }
 
-
 #[tokio::main]
 async fn main() {
     let config = match read_config() {
@@ -119,14 +129,39 @@ async fn main() {
         }
     };
 
-    let bind_address = format!("{}:{}", config.ip, config.port);
+    // Read key and certificate files
+    let key = fs::read(&config.key_path)
+        .expect("Failed to read key file");
+    let cert = fs::read(&config.cert_path)
+        .expect("Failed to read certificate file");
+
+    // Create key and cert objects
+    let key = PKey::private_key_from_pem(&key).expect("Failed to create key");
+    let cert = X509::from_pem(&cert).expect("Failed to create certificate");
+
+    // Combine the key and cert into a PKCS #12 archive
+    let pkcs12 = Pkcs12::builder()
+        .build("", "", &key, &cert)
+        .expect("Failed to build PKCS #12 archive");
+
+    // Convert PKCS #12 archive into native_tls::Identity
+    let identity = native_tls::Identity::from_pkcs12(&pkcs12.to_der().unwrap(), "")
+        .expect("Failed to create identity");
+
+    let server_config = ServerConfig {
+        ip: config.ip,
+        port: config.port,
+        identity,
+    };
+
+    let bind_address = format!("{}:{}", server_config.ip, server_config.port);
 
     match TcpListener::bind(&bind_address).await {
         Ok(listener) => {
             loop {
                 if let Ok((stream, _)) = listener.accept().await {
                     tokio::spawn(async move {
-                        handle_client(stream).await;
+                        handle_client(stream, server_config.clone()).await;
                     });
                 }
             }
