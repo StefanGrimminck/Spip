@@ -1,29 +1,27 @@
-# Spip - Robust Internet Sensor
+# Spip - Internet Sensor
 
-Spip is a minimalist internet sensor, built in Rust to leverage the asynchronous runtime of Tokio, and utilizing low-level networking capability from C via libc. It's tailored for integration within network infrastructure or deployment on an internet-facing device, such as a VPS. Its primary function is to log all incoming TCP traffic.
+### Introduction:
+Spip is an internet sensor designed in Rust. It uses the asynchronous features of Tokio and integrates networking functions from C via libc. Spip's primary role is to log all incoming TCP traffic. This tool is suitable for integration into network setups or on devices that are exposed to the internet, like a VPS.
 
-Spip can be used to identify abnormal network traffic patterns or attempts by internet scanners to locate specific devices. It generates a record of all inbound TCP network traffic, providing data in JSON format for threat detection and analysis.
+### Use Cases:
+By monitoring TCP traffic, Spip helps in identifying unusual network patterns or scanning attempts. It creates detailed records of all inbound TCP events, which are useful for threat analysis. These records are in JSON format.
 
-When deployed in an internet-facing environment, multiple instances of Spip can be used for a broader range of network traffic surveillance and pattern detection of network activity.
+If you have devices exposed to the internet, deploying multiple instances of Spip can enhance network monitoring.
 
-Maintaining its lean design principle, Spip concentrates on recording traffic, avoiding tasks like reverse DNS lookup and geolocation. These features can be incorporated in the post-processing stage as needed, ensuring Spip remains resource-efficient.
+### Design Philosophy:
+Spip is designed to be efficient. It focuses on logging traffic without additional features like reverse DNS lookup or geolocation. If you need such features, you can add them during the data processing phase.
+Output Details:
 
-## Output
+Spip provides the following data in JSON format:
 
-Spip will output the following information in JSON format to Stdout:
-- Timestamp
-- Payload
-- Hex payload
-- Source IP
-- Source Port
-- Destination IP
-- Destination Port
-- Session ID
+    Timestamp
+    Payload and Hex version
+    Source and Destination IPs
+    Source and Destination Ports
+    Session ID
 
-Example of a payload (addresses censored):
-
-```JSON
-{
+Example Output:
+```json{
   "timestamp": 1688737798,
   "payload": "u0013BitTorrent protocol",
   "payload_hex": "13426974546f7272656e742070726f746f636f6c",
@@ -35,66 +33,51 @@ Example of a payload (addresses censored):
 }
 ```
 
-## Configuration
 
-Spip uses a configuration file named config.toml located in the spip-output directory after running the setup instructions. The file should have the following format:
+## Setting Up Spip:
 
+1. Ensure you have Docker installed.
 
-```toml
-ip = "x.x.x.x" # IP Address for Spip to bind to.
-port = 12345 # Port for Spip to bind to. Iptable commands should reflect this port. 
-```
+2. Go to the project's root directory.
 
-You need to specify the IP address and port number in the configuration file.
-
-## Setup and Start-up Instructions
-
-1. Ensure Docker is installed on your system.
-2. Navigate to the project root directory.
-
-3. Give execution permission to the setup script:
-
+3. Make the setup script executable:
 ```bash
-
 chmod +x scripts/setup_spip_agent.sh
 ```
 
-4. Run the setup script to build Spip and generate its configuration:
+4. Run the setup script:
 
 ```bash
-
 sudo ./scripts/setup_spip_agent.sh
 ```
+This will compile Spip and create a config.toml in the `spip-output` directory.
 
-The compiled spip-agent executable and its configuration will be available in the spip-output directory.
-
-6. For the successful operation of Spip, it's essential to redirect TCP traffic from all ports to the port Spip will bind to. Remember to exclude the 
-port where the SSH server binds to as well. Execute the following commands in your terminal to set up the environment:
-
-``` bash
+5. Direct all TCP traffic to the port Spip will monitor. Exclude the port used by your SSH server:
+```bash
 sudo iptables -t nat -A PREROUTING -p tcp --dport <YOUR_SSH_SERVER_PORT> -j ACCEPT
 sudo iptables -t nat -A PREROUTING -p tcp -j REDIRECT --to-port 12345
-``````
 
-5. Run the Spip agent using:
+```
 
-```bash
+6. Start Spip:
 
+```
 ./spip-output/spip-agent
 ```
 
+## Advanced Integrations
 
-## To-Do
+- [Integrate spip-agent with Elasticsearch](./docs/ElasticsearchIntegration.md)
 
-- TLS support: setup handshake when TLS Client Hello is received
-- UDP support
 
-## Contributions
+## Future Enhancements:
+- Adding TLS support.
+- Including UDP traffic monitoring.
 
-We invite and appreciate contributions to the project. You're welcome to fork the project and submit a pull request. If you encounter any issues, 
-feel free to raise them in the GitHub repository.
+## Contributing:
+Contributions to Spip are welcome. Feel free to fork, make changes, and submit a pull request. For any issues, you can raise them on our GitHub repository.
 
-## Contact Information
+## Contact:
 
-For any queries, suggestions, or feedback, please reach out to us at [spip@stefangrimminck.nl](mailto:spip@stefangrimminck.nl). We'll be delighted 
-to assist you.
+For questions or feedback, please email me at spip@stefangrimminck.nl.
+
