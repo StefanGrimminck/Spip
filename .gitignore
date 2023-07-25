@@ -10,8 +10,8 @@ Cargo.lock
 .idea/
 .vscode/
 
-# Generated files
-config.toml
+# Generated output
+spip-output/
 
 # Miscellaneous
 .DS_Store

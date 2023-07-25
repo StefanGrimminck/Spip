@@ -37,7 +37,8 @@ Example of a payload (addresses censored):
 
 ## Configuration
 
-Spip uses a configuration file named `config.toml` located in the same directory as the executable. The file should have the following format:
+Spip uses a configuration file named config.toml located in the spip-output directory after running the setup instructions. The file should have the following format:
+
 
 ```toml
 ip = "x.x.x.x" # IP Address for Spip to bind to.
@@ -46,35 +47,42 @@ port = 12345 # Port for Spip to bind to. Iptable commands should reflect this po
 
 You need to specify the IP address and port number in the configuration file.
 
-## Environment Setup
+## Setup and Start-up Instructions
 
-For the successful operation of Spip, it's essential to redirect TCP traffic from all ports to the port Spip will bind to. Remember to exclude the 
+1. Ensure Docker is installed on your system.
+2. Navigate to the project root directory.
+
+3. Give execution permission to the setup script:
+
+```bash
+
+chmod +x scripts/setup_spip_agent.sh
+```
+
+4. Run the setup script to build Spip and generate its configuration:
+
+```bash
+
+sudo ./scripts/setup_spip_agent.sh
+```
+
+The compiled spip-agent executable and its configuration will be available in the spip-output directory.
+
+6. For the successful operation of Spip, it's essential to redirect TCP traffic from all ports to the port Spip will bind to. Remember to exclude the 
 port where the SSH server binds to as well. Execute the following commands in your terminal to set up the environment:
 
 ``` bash
 sudo iptables -t nat -A PREROUTING -p tcp --dport <YOUR_SSH_SERVER_PORT> -j ACCEPT
-sudo iptables -t nat -A PREROUTING -p tcp -j REDIRECT --to-port <SPIP_PORT>
-```
+sudo iptables -t nat -A PREROUTING -p tcp -j REDIRECT --to-port 12345
+``````
 
-## Compilation Instructions
-
-To compile the code using Cargo, run the following command in the terminal:
-
-``` bash
-cargo build --release
-```
-
-This command will compile your program with optimizations and generate an executable in the `target/release/` directory.
-
-## Start-up Instructions
-
-Make sure the `config.toml` file is present in the same directory as the executable. Then, run your instance using the following command:
+5. Run the Spip agent using:
 
 ```bash
-./spip-agent
+
+./spip-output/spip-agent
 ```
 
-Cargo will handle the compilation and execution of your program.
 
 ## To-Do
 
